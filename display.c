@@ -6,9 +6,6 @@
 
 #include "chip8.h"
 
-const int DISPLAY_WIDTH = DISPLAY_SCALE * SCREEN_WIDTH;
-const int DISPLAY_HEIGHT = DISPLAY_SCALE * SCREEN_HEIGHT;
-
 void display_init(void)
 {
 	/* Window and surface contained by the window. */
@@ -23,7 +20,7 @@ void display_init(void)
 	}
 
 	/* Create the window. */
-	window = SDL_CreateWindow("TEST", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, DISPLAY_WIDTH, DISPLAY_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window = SDL_CreateWindow(DISPLAY_TITLE, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	if (window == NULL)
 	{
 		fprintf(stderr, "unable to create window: %s\n", SDL_GetError());
