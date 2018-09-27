@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "display.h"
-
 static const uint8_t sprites[] = 
 {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, /* 0 */
@@ -63,19 +61,3 @@ void chip8_init(struct chip8 *c, char *romfile)
 	printf("%d\n", sprites[0]);
 }
 
-int main(int argc, char **argv)
-{
-	struct chip8 c;
-
-	if (argc != 2)
-	{
-		fprintf(stderr, "usage: %s <rom file>\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-
-	chip8_init(&c, argv[1]);
-
-	display_init();
-
-	return EXIT_SUCCESS;
-}

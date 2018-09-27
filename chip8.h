@@ -34,7 +34,7 @@ struct chip8
 	 * A 0 B F
 	 */
 	bool keyboard[0xF];
-	bool screen[SCREEN_WIDTH * SCREEN_HEIGHT];
+	uint8_t screen[SCREEN_WIDTH * SCREEN_HEIGHT];
 };
 
 extern void chip8_init(struct chip8 *c, char *romfile);

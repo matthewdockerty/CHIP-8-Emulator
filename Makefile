@@ -1,4 +1,4 @@
-OBJS = chip8.c display.c
+OBJS = chip8.c display.c main.c
 
 OBJ_NAME = chip8
 
