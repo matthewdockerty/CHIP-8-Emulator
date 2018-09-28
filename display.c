@@ -43,23 +43,22 @@ void display_init(void)
 	}
 }
 
-void display_update(uint8_t *screen)
+void display_update(uint32_t *screen)
 {
-	SDL_Event event;
-	while (1)
-	{
-		SDL_UpdateTexture(texture, NULL, screen, SCREEN_WIDTH * sizeof(uint8_t));
-		SDL_WaitEvent(&event);
+	SDL_UpdateTexture(texture, NULL, screen, SCREEN_WIDTH * sizeof(uint32_t));
 
-		switch (event.type)
-		{
-			case SDL_QUIT:
-				exit(EXIT_SUCCESS);
-				break;
-		}
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_RenderPresent(renderer);
+}
 
-		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, texture, NULL, NULL);
-		SDL_RenderPresent(renderer);
-	}
+void display_close(void)
+{
+	SDL_DestroyTexture(texture);
+	texture = NULL;
+
+	SDL_DestroyWindow(window);
+	window = NULL;
+
+	SDL_Quit();
 }

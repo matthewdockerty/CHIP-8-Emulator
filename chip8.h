@@ -25,7 +25,7 @@ struct chip8
 	uint8_t sp;
 
 	/* stack */
-	uint16_t stack;
+	uint16_t stack[16];
 	
 	/* 16 key hexadecimal keypad:
 	 * 1 2 3 C
@@ -34,9 +34,14 @@ struct chip8
 	 * A 0 B F
 	 */
 	bool keyboard[0xF];
-	uint8_t screen[SCREEN_WIDTH * SCREEN_HEIGHT];
+	uint32_t screen[SCREEN_WIDTH * SCREEN_HEIGHT];
+
+	uint16_t opcode;
+
+	bool wait_key;
 };
 
 extern void chip8_init(struct chip8 *c, char *romfile);
+extern void chip8_cycle(struct chip8 *c);
 
 #endif
