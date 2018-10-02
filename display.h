@@ -1,7 +1,7 @@
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <stdint.h>
 
 #define DISPLAY_SCALE 10

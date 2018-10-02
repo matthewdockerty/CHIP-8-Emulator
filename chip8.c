@@ -5,7 +5,6 @@
 #include <string.h>
 
 #define _BSD_SOURCE
-#include <unistd.h> /* TODO: Improve */
 
 static void op_unimplemented(struct chip8 *c)
 {
@@ -27,10 +26,7 @@ static void op_0(struct chip8 *c)
 	}
 	/* SYS addr : jump to a machine code routine */
 	else
-	{/*
-	    c->stack[(c->sp)++] = c->pc;
-	    c->pc = (c->opcode & 0xFFF);
-	    */
+	{
 		op_unimplemented(c);
 	}
 }
@@ -100,22 +96,13 @@ static void op_8(struct chip8 *c)
 	/* 8xy2 - AND Vx, Vy : Set Vx = Vx AND Vy */
 	if ((c->opcode & 0xF) == 0x2)
 	{	
-		c->v[x] = c->v[x] & c->v[y];
+		c->v[x] &= c->v[y];
 	}
 	/* 8xy4 - ADD Vx, Vy : Set Vx = Vx + Vy, set VF = carry */
 	else if ((c->opcode & 0xF) == 0x4)
 	{
-		uint16_t sum = (uint16_t)c->v[x] + (uint16_t)c->v[y];
-		c->v[x] = (uint8_t) sum;
-		
-		if (((sum >> 8) & 0xFF) != 0)
-		{
-			c->v[0xF] = 1;
-		}
-		else
-		{
-			c->v[0xF] = 0;
-		}
+		c->v[0xF] = c->v[y] > c->v[x] ? 1 : 0;
+		c->v[x] += c->v[y];
 	}
 	/* 8xy0 - LD Vx, Vy : Set Vx = Vy */
 	else if ((c->opcode & 0xF) == 0x0)
@@ -138,6 +125,12 @@ static void op_8(struct chip8 *c)
 	else if ((c->opcode &0xF) == 0x3)
 	{
 		c->v[x] ^= c->v[y];
+	}
+	/* 8xyE - SHL Vx {, Vy} : Set Vx = Vx SHL 1 */
+	else if ((c->opcode & 0xF) == 0xE)
+	{
+		c->v[0xF] = c->v[x] >> 7;
+		c->v[x] <<= 1;
 	}
 	else
 	{
@@ -228,15 +221,15 @@ static void op_f(struct chip8 *c)
 	/* Fx33 - LD B, Vx : Store BCD representation of Vx in memory locations I, I+1, and I+2 */
 	if ((c->opcode & 0xFF) == 0x33)
 	{
-		c->memory[c->I] = c->v[x] % 10;
+		c->memory[c->I] = c->v[x] / 100;
 		c->memory[c->I + 1] = (c->v[x] / 10) % 10;
-		c->memory[c->I + 2] = (c->v[x] / 100) % 10;
+		c->memory[c->I + 2] = (c->v[x] % 100) % 10;
 	}
 	/* Fx65 - LD Vx, [I] : Read registers V0 through Vx from memory starting at location I */
 	else if ((c->opcode & 0xFF) == 0x65)
 	{
 		int reg;
-		for (reg = 0; reg > x; reg++)
+		for (reg = 0; reg <= x; reg++)
 		{
 			c->v[reg] = c->memory[c->I + reg];	
 		}
@@ -244,7 +237,7 @@ static void op_f(struct chip8 *c)
 	/* Fx29 - LD F, Vx : Set I = location of sprite for digit Vx */
 	else if ((c->opcode & 0xFF) == 0x29)
 	{
-		c->I = 20 * c->v[x]; 
+		c->I = 5 * c->v[x]; 
 	}
 	/* Fx15 - LD DT, Vx : Set delay timer = Vx */ 
 	else if ((c->opcode & 0xFF) == 0x15)
@@ -259,6 +252,7 @@ static void op_f(struct chip8 *c)
 	/* Fx1E - Add I, Vx : Set I = I + Vx */
 	else if ((c->opcode & 0xFF) == 0x1E)
 	{
+		c->v[0xF] = c->I + c->v[x] > 0xFFF ? 1 : 0;
 		c->I += c->v[x];
 	}
 	/* Fx18 - LD ST, Vx : Set sound timer = Vx */
@@ -266,9 +260,21 @@ static void op_f(struct chip8 *c)
 	{
 		c->t_s = c->v[x];
 	}
+	/* Fx0A - LD Vx, K : Wait for a key press, store the value of the key in Vx. */
 	else if ((c->opcode & 0xFF) == 0x0A)
 	{
+		/* Is stored in Vx when key is pressed. */
+		c->wait_reg = x;
 		c->wait_key = true;
+	}
+	/* Fx55 - LD [I], Fx : Store registers V0 through Vx in memory starting at location I */
+	else if ((c->opcode & 0xFF) == 0x55)
+	{
+		int i;
+		for (i = 0; i <= x; i++)
+		{
+			c->memory[(int)(i + c->I)] = c->v[i];
+		}
 	}
 	else
 	{
@@ -324,7 +330,7 @@ void chip8_init(struct chip8 *c, char *romfile)
 	/* Load ROM into memory. */
 	fprintf(stderr, "loading ROM file: %s...\n", romfile);
 
-	f = fopen(romfile, "r");
+	f = fopen(romfile, "rb");
 	if (!f)
 	{
 		fprintf(stderr, "unable to open ROM file\n");
@@ -342,6 +348,10 @@ void chip8_init(struct chip8 *c, char *romfile)
 	/* Clear stack */
 	memset(c->stack, 0, 16 * sizeof(c->stack[0]));
 
+	/* Clear registers */
+	memset(c->v, 0, 16 * sizeof(c->v[0]));
+
+
 	/* Reset timers. */
 	c->t_d = 0;
 	c->t_s = 0;
@@ -358,15 +368,15 @@ void chip8_init(struct chip8 *c, char *romfile)
 	c->wait_key = false;
 }
 
+#include <Windows.h>
+
 void chip8_cycle(struct chip8 *c)
 {
 	c->opcode = ((uint16_t)(c->memory[c->pc] << 8)) | c->memory[c->pc + 1];
 	c->pc+=2;
 
-	printf("Opcode: %x\n", c->opcode);
+	/*printf("Opcode: %x\n", c->opcode);*/
 	ops[(c->opcode & 0xF000) >> 12](c);
-
-	usleep(200);
 
 	if (c->t_d > 0)
 	{
@@ -374,7 +384,8 @@ void chip8_cycle(struct chip8 *c)
 	}
 	if (c->t_s > 0)
 	{
-		printf("SOUND\n");
 		c->t_s -= 1;
+
+		printf("SOUND\n");
 	}
 }

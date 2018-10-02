@@ -39,6 +39,7 @@ struct chip8
 	uint16_t opcode;
 
 	bool wait_key;
+	int wait_reg;
 };
 
 extern void chip8_init(struct chip8 *c, char *romfile);
