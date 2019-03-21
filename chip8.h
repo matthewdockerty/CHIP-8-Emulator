@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define ROM_START 0x200
 #define MAX_ROM_SIZE 0xE00
@@ -44,5 +45,6 @@ struct chip8
 
 extern void chip8_init(struct chip8 *c, char *romfile);
 extern void chip8_cycle(struct chip8 *c);
+void chip8_print_state(struct chip8 *c, FILE *stream);
 
 #endif

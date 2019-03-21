@@ -1,0 +1,1 @@
+cl /EHsc /MD main.c display.c chip8.c /I SDL\include /link /LIBPATH:SDL\lib\win64 SDL2.lib SDL2main.lib /SUBSYSTEM:CONSOLE

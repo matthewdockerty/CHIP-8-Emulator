@@ -1,10 +1,7 @@
 #include "chip8.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define _BSD_SOURCE
 
 static void op_unimplemented(struct chip8 *c)
 {
@@ -70,6 +67,25 @@ static void op_4(struct chip8 *c)
 	}	
 }
 
+static void op_5(struct chip8 *c)
+{
+	/* 5xy0 - SE Vx, Vy : Skip next instruction if Vx = Vy */
+	int x = (c->opcode >> 8) & 0xF;
+	int y = (c->opcode >> 4) & 0xF;
+
+	if ((c->opcode & 0xF) == 0x0)
+	{
+		if (c->v[x] == c->v[y])
+		{
+			c->pc += 2;
+		}
+	}
+	else
+	{
+		op_unimplemented(c);
+	}
+}
+
 static void op_6(struct chip8 *c)
 {
 	/* LD Vx, byte */
@@ -101,8 +117,17 @@ static void op_8(struct chip8 *c)
 	/* 8xy4 - ADD Vx, Vy : Set Vx = Vx + Vy, set VF = carry */
 	else if ((c->opcode & 0xF) == 0x4)
 	{
-		c->v[0xF] = c->v[y] > c->v[x] ? 1 : 0;
-		c->v[x] += c->v[y];
+		uint16_t sum = (uint16_t)c->v[x] + (uint16_t)c->v[y];
+		c->v[x] = (uint8_t)sum;
+
+		if (((sum >> 8) & 0xFF) != 0)
+		{
+			c->v[0xF] = 1;
+		}
+		else
+		{
+			c->v[0xF] = 0;
+		}
 	}
 	/* 8xy0 - LD Vx, Vy : Set Vx = Vy */
 	else if ((c->opcode & 0xF) == 0x0)
@@ -115,9 +140,16 @@ static void op_8(struct chip8 *c)
 		c->v[0xF] = c->v[x] & 1;
 		c->v[x] = c->v[x] >> 1;
 	}
+	/* 8xy7 - SUBN Vx, Vy : Set Vx = Vy - Vx, set VF = NOT borrow */
+	else if ((c->opcode & 0xF) == 0x7)
+	{
+		c->v[0xF] = c->v[y] > c->v[x] ? 1 : 0;
+		c->v[x] = c->v[y] - c->v[x];
+	}
 	/* 8xy5 - SUB Vx, Vy : Set Vx = Vx - Vy, set VF = NOT borrow */
 	else if ((c->opcode &0xF) == 0x5)
 	{
+		// TODO: Check carry!
 		c->v[0xF] = c->v[x] > c->v[y] ? 1 : 0;
 		c->v[x] -= c->v[y];
 	}
@@ -132,9 +164,26 @@ static void op_8(struct chip8 *c)
 		c->v[0xF] = c->v[x] >> 7;
 		c->v[x] <<= 1;
 	}
+	/* 8xy 1 - OR Vx, Vy : Set Vx = Vx OR Vy */
+	else if ((c->opcode & 0xF) == 0x1)
+	{
+		c->v[x] |= c->v[y];
+	}
 	else
 	{
 		op_unimplemented(c);
+	}
+}
+
+static void op_9(struct chip8 *c)
+{
+	/* 9xy0 - SNE Vx, Vy : Skip next instruction if Vx != Vy */
+	int x = (c->opcode >> 8) & 0xF;
+	int y = (c->opcode >> 4) & 0xF;
+
+	if (c->v[x] != c->v[y])
+	{
+		c->pc += 2;
 	}
 }
 
@@ -145,13 +194,29 @@ static void op_a(struct chip8 *c)
 	c->I = value;
 }
 
+static void op_c(struct chip8 *c)
+{
+	/* Cxkk - RND Vx, byte : Set Vx = random byte AND kk */
+	int x = (c->opcode >> 8) & 0xF;
+	uint8_t value = c->opcode & 0xFF;
+
+	c->v[x] = value & (uint8_t)(rand() % 255);
+}
+
 static bool set_pixel(int x, int y, uint32_t *screen)
 {
 	int index;
 	uint32_t pixel;
 
-	x %= SCREEN_WIDTH;
-	y %= SCREEN_HEIGHT;
+	if (x < 0)
+		x += SCREEN_WIDTH;
+	else if (x > SCREEN_WIDTH)
+		x -= SCREEN_WIDTH;
+
+	if (y < 0)
+		y += SCREEN_HEIGHT;
+	else if (y > SCREEN_HEIGHT)
+		y -= SCREEN_HEIGHT;
 
 	index = (SCREEN_WIDTH * y) + x;
 	pixel = screen[index];
@@ -159,15 +224,6 @@ static bool set_pixel(int x, int y, uint32_t *screen)
 	screen[index] = pixel ^ 0xFFFFFF;
 
 	return (pixel == 0xFFFFFF && screen[index] == 0x000000) ? true : false;
-}	
-
-static void op_c(struct chip8 *c)
-{
-	/* Cxkk - RND Vx, byte : Set Vx = random byte AND kk */
-	int reg = (c->opcode >> 8) & 0xF;
-	uint8_t value = c->opcode & 0xFF;
-
-	c->v[reg] = value & (rand() % 255);
 }
 
 static void op_d(struct chip8 *c)
@@ -187,10 +243,7 @@ static void op_d(struct chip8 *c)
 		{
 			if (((row >> j) & 0x1) == 1)
 			{
-				if (set_pixel(x + (7 - j), y + i, c->screen) == true)
-				{
-					c->v[0xF] = 1;
-				}
+				c->v[0xF] = (set_pixel(x + (7 - j), y + i, c->screen) == true) ? 1 : 0;
 			}
 		}
 	}
@@ -198,7 +251,7 @@ static void op_d(struct chip8 *c)
 
 static void op_e(struct chip8 *c)
 {
-	int x = c->opcode >> 8 & 0xF;
+	int x = (c->opcode >> 8) & 0xF;
 
 	/* Ex9E - SKP Vx : Skip next instruction if key with the value of Vx is pressed */
 	if ((c->opcode & 0xFF) == 0x9E)
@@ -216,7 +269,7 @@ static void op_e(struct chip8 *c)
 
 static void op_f(struct chip8 *c)
 {
-	int x = c->opcode >> 8 & 0xF;
+	int x = (c->opcode >> 8) & 0xF;
 
 	/* Fx33 - LD B, Vx : Store BCD representation of Vx in memory locations I, I+1, and I+2 */
 	if ((c->opcode & 0xFF) == 0x33)
@@ -289,11 +342,11 @@ static void (*ops[0x10])(struct chip8 *) =
 	op_2,
 	op_3,
 	op_4,
-	op_unimplemented,
+	op_5,
 	op_6,
 	op_7,
 	op_8,
-	op_unimplemented,
+	op_9,
 	op_a,
 	op_unimplemented,
 	op_c,
@@ -368,24 +421,63 @@ void chip8_init(struct chip8 *c, char *romfile)
 	c->wait_key = false;
 }
 
-#include <Windows.h>
+static void chip8_timers(struct chip8 *c)
+{
+	static uint32_t last_time = 0, current_time;
+	current_time = SDL_GetTicks();
+
+	if (current_time - last_time > 16)
+	{
+		last_time = current_time;
+		if (c->t_d > 0)
+		{
+			c->t_d--;
+		}
+		if (c->t_s > 0)
+		{
+			c->t_s--;
+
+			printf("SOUND\n");
+		}
+	}
+}
 
 void chip8_cycle(struct chip8 *c)
 {
-	c->opcode = ((uint16_t)(c->memory[c->pc] << 8)) | c->memory[c->pc + 1];
-	c->pc+=2;
+	static uint32_t last_time = 0, current_time;
+	current_time = SDL_GetTicks();
 
-	/*printf("Opcode: %x\n", c->opcode);*/
-	ops[(c->opcode & 0xF000) >> 12](c);
+	chip8_timers(c);
 
-	if (c->t_d > 0)
+	if (!c->wait_key && current_time - last_time > 1)
 	{
-		c->t_d -= 1;
-	}
-	if (c->t_s > 0)
-	{
-		c->t_s -= 1;
+		c->opcode = ((uint16_t)(c->memory[c->pc] << 8)) | c->memory[c->pc + 1];
+		c->pc += 2;
+		
+		printf("Opcode: %x\n", c->opcode);
+		ops[(c->opcode & 0xF000) >> 12](c);
 
-		printf("SOUND\n");
+
+		last_time = current_time;
+
+		/*chip8_print_state(c, stdout);*/
 	}
+}
+
+void chip8_print_state(struct chip8 *c, FILE *stream)
+{
+	int i;
+	printf("Registers: ");
+	for (i = 0; i <= 0xF; i++)
+		printf("V%x: %x  ", i, c->v[i]);
+	printf("\n");
+
+	printf("I: %x\n", c->I);
+	printf("Sound timer: %x   Delay timer: %x\n", c->t_s, c->t_d);
+	printf("PC: %x   SP: %x\n", c->pc, c->sp);
+	
+	printf("Stack: ");
+	for (i = 0; i <= 0xF; i++)
+		printf("%x  ", c->stack[i]);
+	printf("\n\n");
 }

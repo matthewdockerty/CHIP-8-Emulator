@@ -10,7 +10,6 @@ int main(int argc, char **argv)
 	struct chip8 c;
 	SDL_Event event;
 	bool quit = false;
-	unsigned int last_time = 0, current_time;
 
 	if (argc != 2)
 	{
@@ -32,68 +31,68 @@ int main(int argc, char **argv)
 				switch (event.key.keysym.sym)
 				{
 				case SDLK_1:
-					c.keyboard[0] = true;
-					c.v[c.wait_reg] = 0;
+					c.keyboard[0x1] = true;
+					c.v[c.wait_reg] = 0x1;
 					break;
 				case SDLK_2:
-					c.keyboard[1] = true;
-					c.v[c.wait_reg] = 1;
+					c.keyboard[0x2] = true;
+					c.v[c.wait_reg] = 0x2;
 					break;
 				case SDLK_3:
-					c.keyboard[2] = true;
-					c.v[c.wait_reg] = 2;
+					c.keyboard[0x3] = true;
+					c.v[c.wait_reg] = 0x3;
 					break;
 				case SDLK_4:
-					c.keyboard[3] = true;
-					c.v[c.wait_reg] = 3;
+					c.keyboard[0xC] = true;
+					c.v[c.wait_reg] = 0xC;
 					break;
 				case SDLK_q:
-					c.keyboard[4] = true;
-					c.v[c.wait_reg] = 4;
+					c.keyboard[0x4] = true;
+					c.v[c.wait_reg] = 0x4;
 					break;
 				case SDLK_w:
-					c.keyboard[5] = true;
-					c.v[c.wait_reg] = 5;
+					c.keyboard[0x5] = true;
+					c.v[c.wait_reg] = 0x5;
 					break;
 				case SDLK_e:
-					c.keyboard[6] = true;
-					c.v[c.wait_reg] = 6;
+					c.keyboard[0x6] = true;
+					c.v[c.wait_reg] = 0x6;
 					break;
 				case SDLK_r:
-					c.keyboard[7] = true;
-					c.v[c.wait_reg] = 7;
+					c.keyboard[0xD] = true;
+					c.v[c.wait_reg] = 0xD;
 					break;
 				case SDLK_a:
-					c.keyboard[8] = true;
-					c.v[c.wait_reg] = 8;
+					c.keyboard[0x7] = true;
+					c.v[c.wait_reg] = 0x7;
 					break;
 				case SDLK_s:
-					c.keyboard[9] = true;
-					c.v[c.wait_reg] = 9;
+					c.keyboard[0x8] = true;
+					c.v[c.wait_reg] = 0x8;
 					break;
 				case SDLK_d:
-					c.keyboard[10] = true;
-					c.v[c.wait_reg] = 10;
+					c.keyboard[0x9] = true;
+					c.v[c.wait_reg] = 0x9;
 					break;
 				case SDLK_f:
-					c.keyboard[11] = true;
-					c.v[c.wait_reg] = 11;
+					c.keyboard[0xE] = true;
+					c.v[c.wait_reg] = 0xE;
 					break;
 				case SDLK_z:
-					c.keyboard[12] = true;
-					c.v[c.wait_reg] = 12;
+					c.keyboard[0xA] = true;
+					c.v[c.wait_reg] = 0xA;
 					break;
 				case SDLK_x:
-					c.keyboard[13] = true;
-					c.v[c.wait_reg] = 13;
+					c.keyboard[0x0] = true;
+					c.v[c.wait_reg] = 0x0;
 					break;
 				case SDLK_c:
-					c.keyboard[14] = true;
-					c.v[c.wait_reg] = 14;
+					c.keyboard[0xB] = true;
+					c.v[c.wait_reg] = 0xB;
 					break;
 				case SDLK_v:
-					c.keyboard[15] = true;
-					c.v[c.wait_reg] = 15;
+					c.keyboard[0xF] = true;
+					c.v[c.wait_reg] = 0xF;
 					break;
 				}
 				break;
@@ -101,52 +100,52 @@ int main(int argc, char **argv)
 				switch (event.key.keysym.sym)
 				{
 				case SDLK_1:
-					c.keyboard[0] = false;
+					c.keyboard[0x1] = false;
 					break;
 				case SDLK_2:
-					c.keyboard[1] = false;
+					c.keyboard[0x2] = false;
 					break;
 				case SDLK_3:
-					c.keyboard[2] = false;
+					c.keyboard[0x3] = false;
 					break;
 				case SDLK_4:
-					c.keyboard[3] = false;
+					c.keyboard[0xC] = false;
 					break;
 				case SDLK_q:
-					c.keyboard[4] = false;
+					c.keyboard[0x4] = false;
 					break;
 				case SDLK_w:
-					c.keyboard[5] = false;
+					c.keyboard[0x5] = false;
 					break;
 				case SDLK_e:
-					c.keyboard[6] = false;
+					c.keyboard[0x6] = false;
 					break;
 				case SDLK_r:
-					c.keyboard[7] = false;
+					c.keyboard[0xD] = false;
 					break;
 				case SDLK_a:
-					c.keyboard[8] = false;
+					c.keyboard[0x7] = false;
 					break;
 				case SDLK_s:
-					c.keyboard[9] = false;
+					c.keyboard[0x8] = false;
 					break;
 				case SDLK_d:
-					c.keyboard[10] = false;
+					c.keyboard[0x9] = false;
 					break;
 				case SDLK_f:
-					c.keyboard[11] = false;
+					c.keyboard[0xE] = false;
 					break;
 				case SDLK_z:
-					c.keyboard[12] = false;
+					c.keyboard[0xA] = false;
 					break;
 				case SDLK_x:
-					c.keyboard[13] = false;
+					c.keyboard[0x0] = false;
 					break;
 				case SDLK_c:
-					c.keyboard[14] = false;
+					c.keyboard[0xB] = false;
 					break;
 				case SDLK_v:
-					c.keyboard[15] = false;
+					c.keyboard[0xF] = false;
 					break;
 				}
 
@@ -157,13 +156,7 @@ int main(int argc, char **argv)
 			}
 		}
 	
-		current_time = SDL_GetTicks();
-		if (!c.wait_key && current_time > last_time + 1)
-		{
-			chip8_cycle(&c);
-			last_time = current_time;
-		}
-
+		chip8_cycle(&c);
 		display_update(c.screen);
 	}
 

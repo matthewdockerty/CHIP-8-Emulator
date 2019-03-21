@@ -1,5 +1,7 @@
 *.rom
+rom/
 SDL/
 *.dll
 *.obj
 *.exe
+.vscode/
